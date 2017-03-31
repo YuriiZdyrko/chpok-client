@@ -1,6 +1,5 @@
 defmodule ChpokClient do
 
-  import IEx
   import ChpokSocket
   alias ChpokClient.ExchangeChannel
   @moduledoc """
@@ -31,7 +30,8 @@ defmodule ChpokClient do
     with {:ok, socket} <- ChpokSocket.start_link,
       {:ok, channel} <- PhoenixChannelClient.channel(ExchangeChannel, socket: ChpokSocket, topic: "rooms:lobby")
     do
-      # ExchangeChannel.push("new:msg", "Hi mom")
+      ExchangeChannel.join(%{})
+      ExchangeChannel.push("new:msg", %{msg: "FIRST MSG"})
     else
       error -> IO.inspect(error)
     end
