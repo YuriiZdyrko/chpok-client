@@ -1,6 +1,7 @@
 defmodule ChpokClient do
 
-  import ChpokSocket
+  import ChannelSocket
+  import IEx
   alias ChpokClient.ExchangeChannel
   @moduledoc """
   Documentation for ChpokClient.
@@ -27,11 +28,14 @@ defmodule ChpokClient do
   ]
 
   def test_run do
-    with {:ok, socket} <- ChpokSocket.start_link,
-      {:ok, channel} <- PhoenixChannelClient.channel(ExchangeChannel, socket: ChpokSocket, topic: "rooms:lobby")
+    with {:ok, socket} <- ChannelSocket.start_link,
+      {:ok, channel} <- PhoenixChannelClient.channel(ExchangeChannel, socket: ChannelSocket, topic: "rooms:lobby")
     do
       ExchangeChannel.join(%{})
-      ExchangeChannel.push("new:msg", %{msg: "FIRST MSG"})
+      :timer.sleep(1000)
+      main(
+        [dst: "/home/yz/Downloads/chpok_dest/", src: "/home/yz/Downloads/chpok_src/", name: "chpok_yz"]
+      )
     else
       error -> IO.inspect(error)
     end
@@ -44,7 +48,7 @@ defmodule ChpokClient do
     # )
   end
 
-  def main(socket, args) do
+  def main(args) do
     IO.puts("HELLO FROM MAIN")
     args
     # |> parse_args
@@ -90,23 +94,25 @@ defmodule ChpokClient do
   end
 
   @doc """
-  Encode files into binary format and send over WebSocket
+  Returns Stream of 1Mb chunks
   """
   def get_file_stream(dir_content) do
     IO.puts("SENDING DIR CONTENT")
-    "/home/yz/Downloads/chpok_src/1.jpg"
-    |> File.stream!([],2024)
+    "/home/yz/Downloads/chpok_src/slow_motion_drop_hd_stock_video.mp4"
+    |> File.stream!([],1048576)
   end
 
   def send_chunks(file_stream) do
-    # Send each chunk.
     # Server send inform if any error happens during sending chunk to opposite client.
+
     file_stream
-    |> Enum.take(12)
-    |> Stream.map(fn(chunk) ->
+    |> Enum.map(fn(chunk) ->
       # Base64 encode chunk
       # Send chunk
+      ExchangeChannel.push("new:msg", %{msg: Base.encode64(chunk)})
     end)
+
+    ExchangeChannel.push("new:end", %{})
   end
 
   defp parse_args(args) do
