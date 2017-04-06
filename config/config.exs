@@ -2,9 +2,11 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :chpok_client, ChannelSocket,
+config :chpok_client, ClientSocket,
   url: "ws://localhost:4000/socket/websocket",
   serializer: Poison
+
+config :chpok_client, chpok_server: "localhost:4000"
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

@@ -1,128 +1,98 @@
 defmodule ChpokClient do
 
-  import ChannelSocket
-  import IEx
-  alias ChpokClient.ExchangeChannel
   @moduledoc """
-  Documentation for ChpokClient.
+  Callback module to start Leacher or Seeder client,
+  depending on command-line arguments.
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> ChpokClient.hello
-      :world
-
-  """
+  alias ChpokClient.Leacher
+  alias ChpokClient.Seeder
 
   @doc """
   Entry point for CLI
+  Example of arguments: --leacher name="Leacher Name" dir="/home/yz/Downloads/chpok_dst/"
   """
-
-  defstruct [
-    name: "",
-    src: "",
-    dest: ""
-  ]
-
-  def test_run do
-    with {:ok, socket} <- ChannelSocket.start_link,
-      {:ok, channel} <- PhoenixChannelClient.channel(ExchangeChannel, socket: ChannelSocket, topic: "rooms:lobby")
-    do
-      ExchangeChannel.join(%{})
-      :timer.sleep(1000)
-      main(
-        [dst: "/home/yz/Downloads/chpok_dest/", src: "/home/yz/Downloads/chpok_src/", name: "chpok_yz"]
-      )
-    else
-      error -> IO.inspect(error)
-    end
-    # TODO Establish WS connection
-    # socket = Socket.Web.connect! "localhost", 4000, path: "/socket/websocket"
-    #
-    # main(
-    #   socket,
-    #   [dst: "/home/yz/Downloads/chpok_dest/", src: "/home/yz/Downloads/chpok_src/", name: "chpok_yz"]
-    # )
-  end
-
   def main(args) do
-    IO.puts("HELLO FROM MAIN")
-    args
-    # |> parse_args
-    |> process
-    |> validate
-    |> prepare_dir_content
-    |> get_file_stream
-    |> send_chunks
-  end
-
-  def process([]) do
-    IO.puts "Processing error: No arguments given"
-  end
-
-  def process(options) do
-    options_map = Enum.into(options, %{})
-    options_map
+    with {:ok, options} <- parse_args(args),
+      {:ok, options} <- validate(options) do
+      put_env_variables(options)
+      start_client(options)
+    else
+      error -> IO.puts("Error during client initialization: #{inspect error}")
+    end
   end
 
   def validate(args) do
-    if (File.exists?(args.src) || String.length(args.name) < 2) do
-      args
+    if (File.dir?(args.dir) || String.length(args.name) < 2) do
+      {:ok, args}
     else
-      IO.puts("Validation error: Wrong configuration")
+      {:error, "Invalid command line arguments"}
     end
-  end
-
-  @doc """
-  Example response:
-  [
-    %{path: "file.png", dir: false},
-    %{path: "images", dir: true}
-  ]
-  """
-  def prepare_dir_content(options_map) do
-    src = options_map.src
-    with {:ok, paths} = File.ls(src) do
-      paths
-      |> Enum.map(fn(i) -> %{dir: File.dir?(src <> i), path: i}  end)
-    else
-      error -> IO.puts("Error: #{inspect error}")
-    end
-  end
-
-  @doc """
-  Returns Stream of 1Mb chunks
-  """
-  def get_file_stream(dir_content) do
-    IO.puts("SENDING DIR CONTENT")
-    "/home/yz/Downloads/chpok_src/slow_motion_drop_hd_stock_video.mp4"
-    |> File.stream!([],1048576)
-  end
-
-  def send_chunks(file_stream) do
-    # Server send inform if any error happens during sending chunk to opposite client.
-
-    file_stream
-    |> Enum.map(fn(chunk) ->
-      # Base64 encode chunk
-      # Send chunk
-      ExchangeChannel.push("new:msg", %{msg: Base.encode64(chunk)})
-    end)
-
-    ExchangeChannel.push("new:end", %{})
   end
 
   defp parse_args(args) do
-    {options, _, _} = OptionParser.parse(args,
-      switches: [name: :string, src: :string, dest: :string]
-    )
-    options
+    try do
+      {options, _, _} = OptionParser.parse!(args,
+        # Use --leacher switch, to run Leacher client. Seeder is default mode.
+        # Dir will act as a destination folder for Leacher, and source for Seeder
+        switches: [leacher: :boolean, name: :string, dir: :string]
+      )
+      {:ok, Enum.into(options, %{})}
+    catch
+      error ->
+        {:error, "Unable to parse command line arguments. #{inspect error}"}
+    end
   end
 
-  def hello do
-    :world
+  @doc """
+  Put :name and :dir variables
+  """
+  def put_env_variables(options) do
+    for {key, value} <- options do
+      Application.put_env(:chpok_client, key, value)
+    end
+  end
+
+  @doc """
+  Client is lauched in Leacher or Seeder mode.
+  """
+  def start_client(%{leacher: true} = _args) do
+    Leacher.run()
+  end
+
+  def start_client(_args) do
+    Seeder.run()
+  end
+
+  # TODO: Remove in future. Only for testing
+
+  def run_seeder_main do
+    with {:ok, options} <- validate(%{dir: "/home/yz/Downloads/chpok_src/", name: "Seeder1"}) do
+      put_env_variables(options)
+      start_client(options)
+    else
+      error -> IO.puts("Error during client initialization: #{inspect error}")
+    end
+  end
+
+  def run_leacher_main do
+    with {:ok, options} <- validate(%{leacher: true, dir: "/home/yz/Downloads/chpok_dst/", name: "Seeder1"}) do
+      put_env_variables(options)
+      start_client(options)
+    else
+      error -> IO.puts("Error during client initialization: #{inspect error}")
+    end
+  end
+
+  def run_seeder do
+    Application.put_env(:chpok_client, :dir, "/home/yz/Downloads/chpok_src/")
+    Application.put_env(:chpok_client, :name, "Seeder1")
+    ChpokClient.Seeder.run()
+  end
+
+  def run_leacher do
+    Application.put_env(:chpok_client, :dir, "/home/yz/Downloads/chpok_dst/")
+    Application.put_env(:chpok_client, :name, "Leacher1")
+    ChpokClient.Leacher.run()
   end
 end

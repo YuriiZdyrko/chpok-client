@@ -34,7 +34,7 @@ defmodule ChpokClient.Mixfile do
     [
       {:remix, "~> 0.0.1", only: :dev},
       {:poison, "~> 2.0"},
-      {:httpoison, "~> 0.11.1"},
+      {:httpotion, "~> 3.0.2"},
       {:phoenix_channel_client, "~> 0.1.0"},
     ]
   end
