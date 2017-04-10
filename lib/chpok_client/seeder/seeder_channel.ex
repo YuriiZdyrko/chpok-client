@@ -15,14 +15,17 @@ defmodule ChpokClient.SeederChannel do
 
     # Used spawn_link to avoid "Process called itself", when
     # Sender.run() invokes SeederChannel.push
-    spawn(fn ->
-      Sender.run(leacher)
-    end)
+    Sender.start_link(leacher)
 
     {:noreply, state}
   end
 
-  def handle_reply({:ok, :join, _resp, _mysterious_id}, state) do
+  def handle_in("ack:" <> path, _, state) do
+    send Sender, {:ack, path}
+    {:noreply, state}
+  end
+
+  def handle_reply({:ok, :join, _resp, _ref}, state) do
     {:noreply, state}
   end
 
@@ -31,6 +34,11 @@ defmodule ChpokClient.SeederChannel do
   end
 
   def handle_reply({:timeout, :join, _ref}, state) do
+    {:noreply, state}
+  end
+
+  def handle_reply({:timeout, "new:" <> path, _ref}, state) do
+    IO.puts("Request for acknowledgement timed out")
     {:noreply, state}
   end
 

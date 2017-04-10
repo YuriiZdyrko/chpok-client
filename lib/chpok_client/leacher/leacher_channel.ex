@@ -8,16 +8,24 @@ defmodule ChpokClient.LeacherChannel do
   @doc """
   Handle Seeder's response
   """
-  def handle_in("new:msg", %{"msg" => msg, "dst_path" => dst_path}, state) do
+  def handle_in("new:" <> path, %{"msg" => msg, "leacher" => leacher, "seeder" => seeder}, state) do
 
-    IO.puts("Handling 'new:msg' in leacher")
+    IO.puts("Handling file #{path} in leacher")
     dir = Application.get_env(:chpok_client, :dir)
+    name = Application.get_env(:chpok_client, :name)
 
-    {:ok, decoded_msg} = Base.decode64(msg)
-    case File.write(dir <> dst_path, decoded_msg) do
-      :ok -> IO.puts("File #{dst_path} saved")
-      {:error, reason} -> IO.puts("FileSaver error: #{reason}")
+    if (name == leacher) do
+      {:ok, decoded_msg} = Base.decode64(msg)
+      case File.write(dir <> path, decoded_msg) do
+        :ok ->
+          spawn_link(fn ->
+            ChpokClient.LeacherChannel.push("ack:" <> path, %{seeder: seeder})
+          end)
+          IO.puts("File #{path} saved")
+        {:error, reason} -> IO.puts("FileSaver error: #{reason}")
+      end
     end
+
     {:noreply, state}
   end
 
