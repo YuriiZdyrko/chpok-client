@@ -21,16 +21,15 @@ defmodule ChpokClient.LeacherChannel do
     {:noreply, state}
   end
 
-  def handle_reply({:ok, :join, _resp, _mysterious_id}, state) do
+  def handle_reply({:leaching_request_handled, "leachers:" <> _name, _resp, _ref}, state) do
+    {:noreply, state}
+  end
+
+  def handle_reply({:ok, :join, _resp, _ref}, state) do
     {:noreply, state}
   end
 
   def handle_reply({:timeout, :join, _ref}, state) do
-    {:noreply, state}
-  end
-
-  # TODO: probably should be removed
-  def handle_reply({:timeout, "leaching_request", _ref}, state) do
     {:noreply, state}
   end
 

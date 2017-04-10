@@ -11,11 +11,11 @@ defmodule ChpokClient.SeederChannel do
   """
   def handle_in("leaching_request", %{"leacher" => leacher}, state) do
 
-    IO.puts("Leaching request from #{leacher}")
+    IO.puts("Leaching request from: #{leacher}")
 
     # Used spawn_link to avoid "Process called itself", when
     # Sender.run() invokes SeederChannel.push
-    spawn_link(fn ->
+    spawn(fn ->
       Sender.run(leacher)
     end)
 
@@ -26,12 +26,11 @@ defmodule ChpokClient.SeederChannel do
     {:noreply, state}
   end
 
-  def handle_reply({:timeout, :join, _ref}, state) do
+  def handle_reply({:new_msg_handled, "seeders:" <> _name, _resp, _ref}, state) do
     {:noreply, state}
   end
 
-  # TODO: probably should be removed
-  def handle_reply({:timeout, "new:msg", _ref}, state) do
+  def handle_reply({:timeout, :join, _ref}, state) do
     {:noreply, state}
   end
 

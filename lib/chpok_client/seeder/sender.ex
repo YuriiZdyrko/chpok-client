@@ -15,13 +15,12 @@ defmodule ChpokClient.Seeder.Sender do
       dst_path = String.replace_prefix(path, src_dir, "")
 
       {:ok, binary} = File.read(path)
+      encoded = Base.encode64(binary)
 
-      binary
-      |> Base.encode64
-      |> (fn(encoded_binary) ->
-        IO.puts("Sending file: #{path}")
-        SeederChannel.push("new:msg", %{msg: encoded_binary, dst_path: dst_path, leacher: leacher})
-      end).()
+      IO.puts("Sending file: #{path}")
+
+      # TODO: implement without timeout
+      SeederChannel.push("new:msg", %{msg: encoded, dst_path: dst_path, leacher: leacher}, [timeout: 10000])
     end)
   end
 end
