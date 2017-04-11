@@ -15,7 +15,6 @@ defmodule ChpokClient.Seeder.Sender do
   end
 
   def init(leacher) do
-    IO.puts("RESTART")
     {:ok, leacher, 0}
   end
 
@@ -38,19 +37,23 @@ defmodule ChpokClient.Seeder.Sender do
       {:ack, ^dst_path} ->
         "[OK] Receive acknowledged: #{dst_path}"
       after 10000 ->
-        Process.exit(__MODULE__, :kill)
+        "[WARNING] Acknowledgement for #{dst_path} takes too long"
     end
   end
 
   def handle_info(:timeout, leacher) do
     src_dir = Application.get_env(:chpok_client, :dir)
 
-    result = FileExt.ls_r(src_dir)
+    files = FileExt.ls_r(src_dir)
       |> exclude_large_files
-      |> Enum.each(fn(path) -> send_file(path, leacher) end)
+
+    IO.puts("[INFO] Sending #{inspect files} to #{leacher}")
+
+    files |> Enum.each(fn(path) -> send_file(path, leacher) end)
 
     IO.puts("[OK] Transaction completed")
-    {:noreply, leacher}
+
+    {:stop, :ok, nil}
   end
 
   defp exclude_large_files(paths) do

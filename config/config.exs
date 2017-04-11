@@ -3,10 +3,14 @@
 use Mix.Config
 
 config :chpok_client, ClientSocket,
-  url: "ws://localhost:4000/socket/websocket",
+  url: System.get_env("PROXY_WS_URL") || "ws://172.18.0.1:4000/socket/websocket",
   serializer: Poison
 
-config :chpok_client, chpok_server: "localhost:4000"
+config :chpok_client,
+  chpok_server: System.get_env("PROXY_URL") || "172.18.0.1:4000",
+  leacher?: !!System.get_env("LEACHER"),
+  dir: "/dir",
+  name: System.get_env("NAME")
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this

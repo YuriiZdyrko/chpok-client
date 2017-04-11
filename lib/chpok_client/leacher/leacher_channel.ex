@@ -10,20 +10,18 @@ defmodule ChpokClient.LeacherChannel do
   """
   def handle_in("new:" <> path, %{"msg" => msg, "leacher" => leacher, "seeder" => seeder}, state) do
 
-    IO.puts("Handling file #{path} in leacher")
+    IO.puts("[INFO] Handling file #{path}")
     dir = Application.get_env(:chpok_client, :dir)
     name = Application.get_env(:chpok_client, :name)
 
-    if (name == leacher) do
-      {:ok, decoded_msg} = Base.decode64(msg)
-      case File.write(dir <> path, decoded_msg) do
-        :ok ->
-          spawn_link(fn ->
-            ChpokClient.LeacherChannel.push("ack:" <> path, %{seeder: seeder})
-          end)
-          IO.puts("File #{path} saved")
-        {:error, reason} -> IO.puts("FileSaver error: #{reason}")
-      end
+    {:ok, decoded_msg} = Base.decode64(msg)
+    case File.write(dir <> path, decoded_msg) do
+      :ok ->
+        spawn_link(fn ->
+          ChpokClient.LeacherChannel.push("ack:" <> path, %{seeder: seeder})
+        end)
+        IO.puts("!!! \nFile #{path} fetched\n!!!")
+      {:error, reason} -> IO.puts("FileSaver error: #{reason}")
     end
 
     {:noreply, state}
@@ -43,6 +41,6 @@ defmodule ChpokClient.LeacherChannel do
 
   def handle_close(_reason, state) do
     :timer.send_after(5000, {:rejoin, state})
-    {:noreply}
+    {:noreply, %{}}
   end
 end

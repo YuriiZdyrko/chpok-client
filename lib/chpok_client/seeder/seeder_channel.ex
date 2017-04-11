@@ -37,13 +37,13 @@ defmodule ChpokClient.SeederChannel do
     {:noreply, state}
   end
 
-  def handle_reply({:timeout, "new:" <> path, _ref}, state) do
+  def handle_reply({:timeout, "new:" <> _path, _ref}, state) do
     IO.puts("Request for acknowledgement timed out")
     {:noreply, state}
   end
 
   def handle_close(_reason, state) do
     :timer.send_after(5000, {:rejoin, state})
-    {:noreply}
+    {:noreply, %{}}
   end
 end

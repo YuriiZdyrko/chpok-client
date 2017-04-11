@@ -1,6 +1,5 @@
 defmodule ChpokClient.Leacher.Fetcher do
 
-  import IEx
   alias ChpokClient.LeacherChannel
 
   def run(seeder) do

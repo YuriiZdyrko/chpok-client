@@ -4,9 +4,6 @@ defmodule ChpokClient.Leacher do
   Use this module to run Leacher instance.
   To work, it requires running Proxy with at least one connected Seeder.
   """
-
-  import Poison
-  import IEx
   alias ChpokClient.LeacherChannel
   alias ChpokClient.Leacher.Fetcher
 
@@ -23,7 +20,7 @@ defmodule ChpokClient.Leacher do
       LeacherChannel.join(%{})
       fetch_files(seeder)
     else
-      {:error, error} -> IO.puts("Error initializing leacher: #{inspect error}")
+      {:error, error} -> IO.puts("[ERROR] WS connection failure: #{inspect error}")
     end
   end
 

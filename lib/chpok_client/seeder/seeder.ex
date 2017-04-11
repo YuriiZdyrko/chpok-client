@@ -1,6 +1,5 @@
 defmodule ChpokClient.Seeder do
 
-  import ClientSocket
   alias ChpokClient.SeederChannel
 
   def run do
@@ -12,9 +11,10 @@ defmodule ChpokClient.Seeder do
       topic: "seeders:#{name}"
     )
     do
+      IO.puts("[OK] WS connection success")
       SeederChannel.join(%{})
     else
-      error -> IO.inspect(error)
+      error -> IO.puts("[ERROR] WS connection failure: #{inspect error}")
     end
   end
 end
