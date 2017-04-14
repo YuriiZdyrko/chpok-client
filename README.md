@@ -1,6 +1,6 @@
 # ChpokClient
 
-Useless peer-to-peer file sharing over WebSockets.
+Learning project, peer-to-peer file sharing over WebSockets!
 
 ## Run Seeder
 docker run -v /home/yz/Downloads/chpok_src/:/dir --env NAME=Seed client2
